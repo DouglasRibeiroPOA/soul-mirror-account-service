@@ -1,0 +1,201 @@
+/* File: assets/css/sm-auth.css */
+
+/* Container for both login & registration forms */
+.sm-login-wrapper,
+.sm-register-wrapper {
+  max-width: 500px;        /* increased width */
+  margin: 3em auto;
+  background: #fff;
+  padding: 2em;
+  border-radius: 8px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+  font-family: 'Segoe UI', sans-serif;
+  box-sizing: border-box;
+}
+
+/* Labels */
+.sm-login-form label,
+.sm-register-form label {
+  display: block;
+  margin-top: 1em;
+  font-weight: 600;
+  font-size: 0.9em;        /* smaller label text */
+  color: #333;
+}
+
+/* Text inputs, email, password, selects */
+.sm-login-form input,
+.sm-register-form input,
+.sm-register-form select {
+  width: 100%;
+  padding: 0.6em;          /* slightly less padding */
+  margin-top: 0.3em;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  box-sizing: border-box;
+  font-size: 0.9em;        /* smaller input text */
+}
+
+/* Buttons */
+.sm-login-form button,
+.sm-register-form button {
+  margin-top: 1.5em;       /* slightly reduced top margin */
+  width: 100%;
+  padding: 0.7em;          /* adjusted padding */
+  background: #0073aa;
+  color: #fff;
+  border: none;
+  font-size: 0.9em;        /* smaller button text */
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.sm-login-form button:hover,
+.sm-register-form button:hover {
+  background: #005f8d;
+}
+
+/* Alternative action links */
+.sm-alt {
+  text-align: center;
+  margin-top: 1em;
+  font-size: 0.85em;       /* smaller link text */
+}
+
+.sm-alt a {
+  color: #0073aa;
+  text-decoration: none;
+}
+
+.sm-alt a:hover {
+  text-decoration: underline;
+}
+
+/* Error messages */
+.sm-error {
+  color: #d63638;
+  font-weight: 500;
+  font-size: 0.88em;       /* smaller error text */
+  margin-bottom: 1em;
+}
+
+
+/* Auth Form Styles */
+.sm-auth-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    padding: 2rem;
+    background-color: #f8fafc;
+}
+
+.sm-auth-form {
+    background: white;
+    padding: 2.5rem;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    width: 100%;
+    max-width: 450px;
+}
+
+.sm-auth-form h2 {
+    margin-bottom: 1.5rem;
+    color: #1e293b;
+    font-size: 1.75rem;
+    text-align: center;
+    font-weight: 600;
+}
+
+.sm-form-group {
+    margin-bottom: 1.25rem;
+}
+
+.sm-form-group label {
+    display: block;
+    margin-bottom: 0.5rem;
+    color: #334155;
+    font-weight: 500;
+    font-size: 0.9375rem;
+}
+
+.sm-form-group input {
+    width: 100%;
+    padding: 0.75rem 1rem;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    font-size: 1rem;
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.sm-form-group input:focus {
+    outline: none;
+    border-color: #38a169;
+    box-shadow: 0 0 0 3px rgba(56, 161, 105, 0.2);
+}
+
+.sm-error-message {
+    color: #dc2626;
+    font-size: 0.8125rem;
+    margin-top: 0.25rem;
+    display: none;
+}
+
+.sm-auth-button {
+    width: 100%;
+    padding: 0.75rem;
+    background-color: #38a169;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 1rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background-color 0.2s, transform 0.1s;
+    margin-top: 0.5rem;
+}
+
+.sm-auth-button:hover {
+    background-color: #2f855a;
+}
+
+.sm-auth-button:active {
+    transform: translateY(1px);
+}
+
+.sm-auth-alt-option {
+    margin-top: 1.5rem;
+    text-align: center;
+    color: #64748b;
+    font-size: 0.9375rem;
+}
+
+.sm-auth-alt-option p {
+    margin-bottom: 0.75rem;
+}
+
+.sm-auth-link-button {
+    display: inline-block;
+    padding: 0.5rem 1rem;
+    background-color: #f1f5f9;
+    color: #334155;
+    border-radius: 6px;
+    text-decoration: none;
+    font-weight: 500;
+    transition: background-color 0.2s;
+}
+
+.sm-auth-link-button:hover {
+    background-color: #e2e8f0;
+}
+
+/* Responsive adjustments */
+@media (max-width: 480px) {
+    .sm-auth-form {
+        padding: 1.75rem;
+    }
+    
+    .sm-auth-form h2 {
+        font-size: 1.5rem;
+    }
+}
