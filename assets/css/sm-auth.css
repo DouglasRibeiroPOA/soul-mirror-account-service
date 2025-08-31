@@ -1,9 +1,9 @@
 /* File: assets/css/sm-auth.css */
 
-/* Container for both login & registration forms */
+/* Container for both login & registration forms (legacy wrappers) */
 .sm-login-wrapper,
 .sm-register-wrapper {
-  max-width: 500px;        /* increased width */
+  max-width: 500px;
   margin: 3em auto;
   background: #fff;
   padding: 2em;
@@ -19,183 +19,218 @@
   display: block;
   margin-top: 1em;
   font-weight: 600;
-  font-size: 0.9em;        /* smaller label text */
+  font-size: 0.9em;
   color: #333;
 }
 
-/* Text inputs, email, password, selects */
+/* Text inputs, email, password, selects (legacy forms) */
 .sm-login-form input,
 .sm-register-form input,
 .sm-register-form select {
   width: 100%;
-  padding: 0.6em;          /* slightly less padding */
+  padding: 0.6em;
   margin-top: 0.3em;
   border: 1px solid #ccc;
   border-radius: 4px;
   box-sizing: border-box;
-  font-size: 0.9em;        /* smaller input text */
+  font-size: 0.9em;
 }
 
-/* Buttons */
+/* Buttons (legacy forms) */
 .sm-login-form button,
 .sm-register-form button {
-  margin-top: 1.5em;       /* slightly reduced top margin */
+  margin-top: 1.5em;
   width: 100%;
-  padding: 0.7em;          /* adjusted padding */
+  padding: 0.7em;
   background: #0073aa;
   color: #fff;
   border: none;
-  font-size: 0.9em;        /* smaller button text */
+  font-size: 0.9em;
   border-radius: 4px;
   cursor: pointer;
 }
-
 .sm-login-form button:hover,
 .sm-register-form button:hover {
   background: #005f8d;
 }
 
-/* Alternative action links */
+/* Alternative action links (legacy) */
 .sm-alt {
   text-align: center;
   margin-top: 1em;
-  font-size: 0.85em;       /* smaller link text */
+  font-size: 0.85em;
 }
-
 .sm-alt a {
   color: #0073aa;
   text-decoration: none;
 }
-
 .sm-alt a:hover {
   text-decoration: underline;
 }
 
-/* Error messages */
+/* Error messages (legacy) */
 .sm-error {
   color: #d63638;
   font-weight: 500;
-  font-size: 0.88em;       /* smaller error text */
+  font-size: 0.88em;
   margin-bottom: 1em;
 }
 
+/* ============================
+   Modern Auth Form Styles
+   ============================ */
 
-/* Auth Form Styles */
 .sm-auth-container {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    min-height: 100vh;
-    padding: 2rem;
-    background-color: #f8fafc;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  padding: 2rem;               /* outer page padding */
+  background-color: #f8fafc;
+  box-sizing: border-box;
 }
 
 .sm-auth-form {
-    background: white;
-    padding: 2.5rem;
-    border-radius: 12px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-    width: 100%;
-    max-width: 450px;
+  background: white;
+  padding: 2.5rem;             /* inner card padding */
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  width: 100%;
+  max-width: 520px;            /* slightly wider by default */
+  box-sizing: border-box;      /* critical for consistent right margin */
 }
 
 .sm-auth-form h2 {
-    margin-bottom: 1.5rem;
-    color: #1e293b;
-    font-size: 1.75rem;
-    text-align: center;
-    font-weight: 600;
+  margin-bottom: 1.5rem;
+  color: #1e293b;
+  font-size: 1.75rem;
+  text-align: center;
+  font-weight: 600;
 }
 
 .sm-form-group {
-    margin-bottom: 1.25rem;
+  margin-bottom: 1.25rem;
 }
 
 .sm-form-group label {
-    display: block;
-    margin-bottom: 0.5rem;
-    color: #334155;
-    font-weight: 500;
-    font-size: 0.9375rem;
+  display: block;
+  margin-bottom: 0.5rem;
+  color: #334155;
+  font-weight: 500;
+  font-size: 0.9375rem;
 }
 
+/* Fix input alignment inside the auth form */
 .sm-form-group input {
-    width: 100%;
-    padding: 0.75rem 1rem;
-    border: 1px solid #e2e8f0;
-    border-radius: 8px;
-    font-size: 1rem;
-    transition: border-color 0.2s, box-shadow 0.2s;
+  width: 100%;
+  padding: 0.75rem 1rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  font-size: 1rem;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  box-sizing: border-box;     /* ensure padding counts in width */
+  margin-right: 2px;          /* tiny buffer so right edge never "touches" */
 }
 
 .sm-form-group input:focus {
-    outline: none;
-    border-color: #38a169;
-    box-shadow: 0 0 0 3px rgba(56, 161, 105, 0.2);
+  outline: none;
+  border-color: #38a169;
+  box-shadow: 0 0 0 3px rgba(56, 161, 105, 0.2);
 }
 
 .sm-error-message {
-    color: #dc2626;
-    font-size: 0.8125rem;
-    margin-top: 0.25rem;
-    display: none;
+  color: #dc2626;
+  font-size: 0.8125rem;
+  margin-top: 0.25rem;
+  display: none;
+}
+
+/* Server-side error banner (used when ?error= is present) */
+.sm-server-error {
+  background: #fee2e2;
+  color: #991b1b;
+  border: 1px solid #fecaca;
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  margin-bottom: 1rem;
+  font-size: 0.9375rem;
 }
 
 .sm-auth-button {
-    width: 100%;
-    padding: 0.75rem;
-    background-color: #38a169;
-    color: white;
-    border: none;
-    border-radius: 8px;
-    font-size: 1rem;
-    font-weight: 500;
-    cursor: pointer;
-    transition: background-color 0.2s, transform 0.1s;
-    margin-top: 0.5rem;
+  width: 100%;
+  padding: 0.75rem;
+  background-color: #38a169;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s, transform 0.1s;
+  margin-top: 0.5rem;
 }
-
 .sm-auth-button:hover {
-    background-color: #2f855a;
+  background-color: #2f855a;
 }
-
 .sm-auth-button:active {
-    transform: translateY(1px);
+  transform: translateY(1px);
 }
 
 .sm-auth-alt-option {
-    margin-top: 1.5rem;
-    text-align: center;
-    color: #64748b;
-    font-size: 0.9375rem;
+  margin-top: 1.5rem;
+  text-align: center;
+  color: #64748b;
+  font-size: 0.9375rem;
 }
-
 .sm-auth-alt-option p {
-    margin-bottom: 0.75rem;
+  margin-bottom: 0.75rem;
 }
-
 .sm-auth-link-button {
-    display: inline-block;
-    padding: 0.5rem 1rem;
-    background-color: #f1f5f9;
-    color: #334155;
-    border-radius: 6px;
-    text-decoration: none;
-    font-weight: 500;
-    transition: background-color 0.2s;
+  display: inline-block;
+  padding: 0.5rem 1rem;
+  background-color: #f1f5f9;
+  color: #334155;
+  border-radius: 6px;
+  text-decoration: none;
+  font-weight: 500;
+  transition: background-color 0.2s;
 }
-
 .sm-auth-link-button:hover {
-    background-color: #e2e8f0;
+  background-color: #e2e8f0;
 }
 
-/* Responsive adjustments */
+/* Subtle hint text under inputs */
+.sm-hint {
+  font-size: 0.8rem;       /* smaller than labels */
+  color: #6b7280;          /* neutral gray */
+  margin-top: 0.25rem;
+  line-height: 1.3;
+}
+
+/* ============================
+   Responsive adjustments
+   ============================ */
+
+/* Tablets and down */
+@media (max-width: 768px) {
+  .sm-auth-container {
+    padding: 1rem;        /* reduce outer padding */
+  }
+  .sm-auth-form {
+    max-width: 100%;          /* use most of the screen width */
+    padding: 1.25rem;         /* reduce inner padding to avoid squish */
+  }
+}
+
+/* Small phones */
 @media (max-width: 480px) {
-    .sm-auth-form {
-        padding: 1.75rem;
-    }
-    
-    .sm-auth-form h2 {
-        font-size: 1.5rem;
-    }
+  .sm-auth-container { padding: 0.5rem; }
+  .sm-auth-form      { padding: 0.9rem; }
+
+  .sm-auth-form h2 {
+    font-size: 1.4rem;
+  }
+  .sm-form-group input {
+    padding: 0.7rem 0.9rem;  /* slightly tighter inputs on very small screens */
+  }
 }

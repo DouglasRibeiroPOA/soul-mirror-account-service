@@ -1,3 +1,80 @@
+<?php
+/**
+ * Template: Login Form
+ * Path: templates/sm-login-form.php
+ */
+if (!defined('ABSPATH')) exit;
+
+// Get redirect URL with fallback
+$redirect = !empty($_GET['redirect_to']) ? esc_url($_GET['redirect_to']) : home_url();
+$state = !empty($_GET['state']) ? sanitize_text_field($_GET['state']) : '';
+
+// Get lost password URL
+$lost_pw_url = wp_lostpassword_url();
+
+// Get registration URL
+$register_url = wp_registration_url();
+
+// Get the correct path to the JavaScript file
+$plugin_url = plugin_dir_url(__FILE__);
+// Go up two levels from templates directory to plugin root, then to assets/js
+$js_url = $plugin_url . '../../assets/js/sm-login.js';
+?>
+<div class="sm-login-container">
+  <div class="sm-login-card">
+    <div class="sm-login-header">
+      <h2>Sign In</h2>
+      <div class="sm-alert sm-alert-error" style="display:none"></div>
+    </div>
+
+    <form class="sm-login-form" id="sm-login-form" novalidate>
+      <div class="sm-form-group">
+        <label for="sm_email" class="sm-form-label">Email Address</label>
+        <input
+          type="email"
+          id="sm_email"
+          name="sm_email"
+          class="sm-form-input"
+          required
+          autocomplete="email"
+          placeholder="Enter your email"
+          value="<?php echo !empty($_GET['sm_email']) ? esc_attr($_GET['sm_email']) : ''; ?>">
+      </div>
+
+      <div class="sm-form-group">
+        <label for="sm_password" class="sm-form-label">Password</label>
+        <input
+          type="password"
+          id="sm_password"
+          name="sm_password"
+          class="sm-form-input"
+          required
+          autocomplete="current-password"
+          placeholder="Enter your password">
+      </div>
+
+      <input type="hidden" name="sm_redirect" value="<?php echo esc_attr($redirect); ?>">
+      <?php if (!empty($state)) : ?>
+        <input type="hidden" name="sm_state" value="<?php echo esc_attr($state); ?>">
+      <?php endif; ?>
+
+      <div class="sm-form-group sm-form-actions">
+        <button type="submit" class="sm-btn sm-btn-primary sm-btn-block">Login</button>
+      </div>
+    </form>
+
+    <div class="sm-login-footer">
+      <div class="sm-footer-links">
+        <a href="<?php echo esc_url($lost_pw_url); ?>" class="sm-footer-link">Forgot Password?</a>
+        <span class="sm-footer-separator">·</span>
+        <a href="<?php echo esc_url($register_url); ?>" class="sm-footer-link">Create Account</a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Add the login JavaScript directly to ensure it loads -->
+<script>
 // File: assets/js/sm-login.js
 // Complete login handler with proper form submission prevention
 
@@ -208,14 +285,10 @@
             return;
         }
         
-        // Remove any existing submit listeners to prevent duplicates
-        const newForm = form.cloneNode(true);
-        form.parentNode.replaceChild(newForm, form);
-        
-        // Add the submit handler to the new form
-        newForm.addEventListener('submit', async (e) => {
+        // Add the submit handler to the form
+        form.addEventListener('submit', async (e) => {
             e.preventDefault();
-            console.log('Form submission intercepted');
+            console.log('Form submission intercepted - preventing default');
             hideError();
             
             const email = emailInput.value.trim();
@@ -245,6 +318,7 @@
         });
         
         log('Login form initialized successfully');
+        window.smLoginInitialized = true;
     }
     
     // Initialize when DOM is ready
@@ -255,3 +329,35 @@
     }
     
 })();
+</script>
+
+<!-- Debugging script -->
+<script>
+// Debugging helper
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('DOM loaded, checking login form');
+    
+    const form = document.getElementById('sm-login-form');
+    if (!form) {
+        console.error('Login form not found!');
+        return;
+    }
+    
+    console.log('Login form found:', form);
+    
+    // Check if form has novalidate attribute
+    if (!form.hasAttribute('novalidate')) {
+        console.error('Form is missing novalidate attribute!');
+        form.setAttribute('novalidate', 'true');
+    }
+    
+    // Check if our JS is loaded
+    setTimeout(function() {
+        if (typeof window.smLoginInitialized !== 'undefined') {
+            console.log('Login JS is loaded and initialized');
+        } else {
+            console.error('Login JS failed to initialize');
+        }
+    }, 1000);
+});
+</script>

@@ -1,5 +1,4 @@
 <?php
-
 /**
  * Plugin Name: SoulMirror Account Service
  * Description: Centralized user and credit manager for SoulMirror platform.
@@ -9,8 +8,10 @@
 
 if (! defined('ABSPATH')) exit;
 
+// JWT secret used by your class-sm-jwt.php (ensure the class reads this constant)
 define('SOULMIRROR_JWT_SECRET', 'dev-super-long-random-secret-change-me');
 
+// Base paths/namespace
 define('HAS_PLUGIN_DIR', plugin_dir_path(__FILE__));
 define('HAS_PLUGIN_URL', plugin_dir_url(__FILE__));
 define('SM_API_NAMESPACE', 'soulmirror/v1');
@@ -21,7 +22,6 @@ require_once HAS_PLUGIN_DIR . 'includes/class-sm-account.php';
 require_once HAS_PLUGIN_DIR . 'includes/class-sm-credit-controller.php';
 require_once HAS_PLUGIN_DIR . 'includes/class-sm-api-router.php';
 require_once HAS_PLUGIN_DIR . 'includes/class-sm-sso-controller.php';
-
 
 // — Load shortcodes —
 require_once HAS_PLUGIN_DIR . 'includes/shortcodes/class-sm-login-shortcode.php';
@@ -41,49 +41,15 @@ add_action('init', ['SM_Register_Shortcode', 'init']);
 // — Initialize credit‐related hooks (WooCommerce) —
 add_action('init', ['SM_Credit_Controller', 'init']);
 
+/**
+ * NOTE:
+ * We intentionally DO NOT hook into wp-admin or WP core login redirects anymore.
+ * - No admin lockouts
+ * - No login_redirect filters
+ * Your front-end pages (e.g., /login and /register) handle all auth UI via shortcodes/templates.
+ */
 
-// === Lock wp-admin for non-admins; admins (you) still have full access ===
-add_action('init', function () {
-  if (is_admin() && !current_user_can('manage_options') && !(defined('DOING_AJAX') && DOING_AJAX)) {
-    // send customers to your front-end dashboard page
-    wp_redirect(home_url('/account-dashboard/'));
-    exit;
-  }
-});
-
-// Respect the SSO bounce (redirect_to) when login was initiated by /sso/start.
-// If not an SSO login, keep the usual behavior: admins → /wp-admin, others → /account-dashboard/.
-// Respect SSO bounce only when the login was started by /sso/start (sm_sso=1 inside redirect_to)
-add_filter('login_redirect', function ($redirect_to, $request, $user) {
-  if (is_wp_error($user) || empty($user) || !is_object($user)) {
-    return $redirect_to;
-  }
-
-  $redirectToRaw = $_REQUEST['redirect_to'] ?? '';
-  $isSso = false;
-
-  if ($redirectToRaw) {
-    // redirect_to is url-encoded; decode and inspect it
-    $decoded = urldecode($redirectToRaw);
-    $ssoStart = rest_url(SM_API_NAMESPACE . '/sso/start');
-
-    if (strpos($decoded, $ssoStart) === 0 && strpos($decoded, 'sm_sso=1') !== false) {
-      $isSso = true;
-    }
-  }
-
-  if ($isSso) {
-    error_log('[LOGIN_REDIRECT] SSO flow detected → honoring redirect_to back to /sso/start');
-    return $redirectToRaw; // hand control back to SSO controller
-  }
-
-  // Normal post-login routing
-  return user_can($user, 'manage_options') ? admin_url() : home_url('/account-dashboard/');
-}, 10, 3);
-
-
-
-
+// — Front-end assets only when your auth shortcodes are present —
 add_action('wp_enqueue_scripts', function () {
   global $post;
   if (! $post) return;

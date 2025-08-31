@@ -1,0 +1,336 @@
+   :root {
+       --primary-green: #2E8B57;
+       --light-green: #4CAF50;
+       --dark-green: #1A5632;
+       --white: #FFFFFF;
+       --light-gray: #F9F9F9;
+       --medium-gray: #E8E8E8;
+       --dark-gray: #333333;
+       --error-color: #F44336;
+       --success-color: #4CAF50;
+   }
+
+   * {
+       box-sizing: border-box;
+       margin: 0;
+       padding: 0;
+   }
+
+   body {
+       background: linear-gradient(135deg, #f5f7fa 0%, #e4e8f0 100%);
+       font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+       display: flex;
+       justify-content: center;
+       align-items: center;
+       min-height: 100vh;
+       padding: 20px;
+   }
+
+   .sm-registration-container {
+       background-color: var(--white);
+       border-radius: 16px;
+       box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+       width: 100%;
+       max-width: 480px;
+       overflow: hidden;
+       transition: transform 0.3s ease;
+       margin: 0 auto;
+   }
+
+   .sm-registration-container:hover {
+       transform: translateY(-5px);
+   }
+
+   .sm-registration-header {
+       background: linear-gradient(135deg, var(--primary-green) 0%, var(--dark-green) 100%);
+       color: var(--white);
+       padding: 30px 25px;
+       text-align: center;
+       position: relative;
+       overflow: hidden;
+   }
+
+   .sm-registration-header::before {
+       content: '';
+       position: absolute;
+       top: -50%;
+       left: -50%;
+       width: 200%;
+       height: 200%;
+       background: radial-gradient(circle, rgba(255, 255, 255, 0.1) 0%, transparent 60%);
+       transform: rotate(30deg);
+   }
+
+   .sm-registration-header h2 {
+       font-weight: 700;
+       font-size: 28px;
+       margin: 0 0 10px 0;
+       position: relative;
+   }
+
+   .sm-registration-header p {
+       font-size: 16px;
+       opacity: 0.9;
+       position: relative;
+   }
+
+   .sm-registration-form {
+       padding: 30px 25px;
+   }
+
+   .sm-form-group {
+       margin-bottom: 24px;
+       position: relative;
+   }
+
+   .sm-form-group label {
+       display: block;
+       margin-bottom: 10px;
+       font-weight: 600;
+       color: var(--dark-gray);
+       font-size: 15px;
+   }
+
+   .sm-form-group input {
+       width: 100%;
+       padding: 16px 20px;
+       border: 2px solid var(--medium-gray);
+       border-radius: 12px;
+       font-size: 16px;
+       transition: all 0.3s;
+       background-color: var(--light-gray);
+   }
+
+   .sm-form-group input:focus {
+       border-color: var(--primary-green);
+       outline: none;
+       box-shadow: 0 0 0 3px rgba(46, 139, 87, 0.15);
+       background-color: var(--white);
+   }
+
+   .sm-form-group i {
+       position: absolute;
+       right: 20px;
+       top: 45px;
+       color: var(--primary-green);
+       font-size: 18px;
+   }
+
+   .sm-error-message {
+       color: var(--error-color);
+       font-size: 14px;
+       margin-top: 8px;
+       display: none;
+       font-weight: 500;
+   }
+
+   .sm-submit-btn {
+       background: linear-gradient(135deg, var(--primary-green) 0%, var(--dark-green) 100%);
+       color: var(--white);
+       border: none;
+       border-radius: 12px;
+       padding: 18px;
+       font-size: 18px;
+       font-weight: 700;
+       width: 100%;
+       cursor: pointer;
+       transition: all 0.3s;
+       box-shadow: 0 4px 12px rgba(46, 139, 87, 0.2);
+       display: flex;
+       justify-content: center;
+       align-items: center;
+       gap: 10px;
+   }
+
+   .sm-submit-btn:hover {
+       transform: translateY(-2px);
+       box-shadow: 0 6px 16px rgba(46, 139, 87, 0.3);
+   }
+
+   .sm-submit-btn:active {
+       transform: translateY(0);
+   }
+
+   .sm-form-footer {
+       text-align: center;
+       margin-top: 24px;
+       color: var(--dark-gray);
+       font-size: 15px;
+   }
+
+   .sm-form-footer a {
+       color: var(--primary-green);
+       text-decoration: none;
+       font-weight: 600;
+       transition: all 0.2s;
+   }
+
+   .sm-form-footer a:hover {
+       text-decoration: underline;
+   }
+
+   .sm-error-server {
+       background-color: #ffebee;
+       color: #d32f2f;
+       padding: 16px;
+       border-radius: 12px;
+       margin-bottom: 24px;
+       display: none;
+       border-left: 4px solid #d32f2f;
+       font-weight: 500;
+   }
+
+   .sm-loading {
+       display: inline-block;
+       width: 20px;
+       height: 20px;
+       border: 3px solid rgba(255, 255, 255, .3);
+       border-radius: 50%;
+       border-top-color: #fff;
+       animation: spin 1s ease-in-out infinite;
+   }
+
+   @keyframes spin {
+       to {
+           transform: rotate(360deg);
+       }
+   }
+
+   /* Success Modal */
+   .sm-modal-overlay {
+       position: fixed;
+       top: 0;
+       left: 0;
+       right: 0;
+       bottom: 0;
+       background-color: rgba(0, 0, 0, 0.7);
+       display: flex;
+       justify-content: center;
+       align-items: center;
+       z-index: 1000;
+       opacity: 0;
+       visibility: hidden;
+       transition: all 0.3s;
+   }
+
+   .sm-modal-overlay.active {
+       opacity: 1;
+       visibility: visible;
+   }
+
+   .sm-modal {
+       background-color: var(--white);
+       border-radius: 16px;
+       width: 90%;
+       max-width: 400px;
+       padding: 30px;
+       text-align: center;
+       box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+       transform: translateY(20px);
+       transition: transform 0.3s;
+   }
+
+   .sm-modal-overlay.active .sm-modal {
+       transform: translateY(0);
+   }
+
+   .sm-modal-icon {
+       font-size: 60px;
+       color: var(--success-color);
+       margin-bottom: 20px;
+   }
+
+   .sm-modal h3 {
+       font-size: 24px;
+       margin-bottom: 15px;
+       color: var(--dark-gray);
+   }
+
+   .sm-modal p {
+       margin-bottom: 25px;
+       color: var(--dark-gray);
+       line-height: 1.5;
+   }
+
+   .sm-modal-btn {
+       background: linear-gradient(135deg, var(--primary-green) 0%, var(--dark-green) 100%);
+       color: white;
+       border: none;
+       border-radius: 12px;
+       padding: 14px 28px;
+       font-size: 16px;
+       font-weight: 600;
+       cursor: pointer;
+       transition: all 0.3s;
+   }
+
+   .sm-modal-btn:hover {
+       transform: translateY(-2px);
+       box-shadow: 0 4px 12px rgba(46, 139, 87, 0.3);
+   }
+
+   /* Mobile Responsiveness */
+   @media (max-width: 480px) {
+       body {
+           padding: 15px;
+           align-items: flex-start;
+           padding-top: 30px;
+       }
+
+       .sm-registration-container {
+           border-radius: 12px;
+           max-width: 100%;
+           margin: 0;
+       }
+
+       .sm-registration-header {
+           padding: 25px 20px;
+       }
+
+       .sm-registration-header h2 {
+           font-size: 24px;
+       }
+
+       .sm-registration-form {
+           padding: 25px 20px;
+       }
+
+       .sm-form-group input {
+           padding: 14px 16px;
+       }
+
+       .sm-form-group i {
+           right: 16px;
+           top: 42px;
+       }
+
+       .sm-submit-btn {
+           padding: 16px;
+           font-size: 16px;
+       }
+   }
+
+   @media (max-width: 350px) {
+       .sm-registration-header {
+           padding: 20px 15px;
+       }
+
+       .sm-registration-form {
+           padding: 20px 15px;
+       }
+
+       .sm-form-group {
+           margin-bottom: 20px;
+       }
+
+       .sm-form-group input {
+           padding: 12px 14px;
+           font-size: 15px;
+       }
+
+       .sm-form-group i {
+           right: 14px;
+           top: 40px;
+           font-size: 16px;
+       }
+   }
