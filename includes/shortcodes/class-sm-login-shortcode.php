@@ -6,13 +6,12 @@ class SM_Login_Shortcode
 {
     /**
      * Whitelisted redirect hosts. Only these are allowed for the ?redirect / ?redirect_uri.
-     * ⚠️ Edit this list to match your environments.
      */
     private static $allowed_hosts = [
         'palmreading.vitalguideshop.com',
         'aura.vitalguideshop.com',
         'soul-mirror.local',
-        'palm-reading.local',  // add dev hosts as needed
+        'palm-reading.local',
     ];
 
     public static function init()
@@ -22,27 +21,48 @@ class SM_Login_Shortcode
     }
 
     /**
-     * Enqueue ONLY when the page contains [sm_login_form].
-     * (CSS only for now; we’ll add JS later.)
+     * Enqueue assets ONLY when the page contains [sm_login_form]
      */
     public static function enqueue_assets()
     {
         global $post;
+        
+        // Check if we're on a page with the shortcode
         if (!is_a($post, 'WP_Post') || !has_shortcode($post->post_content, 'sm_login_form')) {
             return;
         }
 
-        // Base plugin assets folder — adjust if you keep a different structure
-        $plugin_url = plugin_dir_url(__FILE__) . '../../assets/';
+        // Get the correct base URL for assets (go up 2 levels from includes/shortcodes/)
+        $plugin_url = plugin_dir_url(dirname(__FILE__, 2)) . 'assets/';
 
         // Login CSS
-        wp_enqueue_style('sm-login-css', $plugin_url . 'css/sm-login.css', [], '1.0.0');
+        wp_enqueue_style(
+            'sm-login-css', 
+            $plugin_url . 'css/sm-login.css', 
+            [], 
+            '1.0.1'
+        );
+
+        // Login JavaScript - CRITICAL!
+        wp_enqueue_script(
+            'sm-login-js',
+            $plugin_url . 'js/sm-login.js',
+            [], // No dependencies
+            '1.0.1',
+            true // Load in footer
+        );
+
+        // Localize script with data for JavaScript
+        wp_localize_script('sm-login-js', 'smLoginParams', [
+            'ajax_url' => admin_url('admin-ajax.php'),
+            'rest_url' => rest_url('soulmirror/v1/login'),
+            'home_url' => home_url('/'),
+            'nonce'    => wp_create_nonce('sm_login_nonce')
+        ]);
     }
 
     /**
-     * Render the login form by including the template.
-     * We also pre-sanitize the redirect target against the whitelist and
-     * pass it to the template via scoped variables.
+     * Render the login form
      */
     public static function render_shortcode($atts)
     {
@@ -65,7 +85,6 @@ class SM_Login_Shortcode
         ];
 
         ob_start();
-        // Make $template_vars keys available as variables in the template
         extract($template_vars, EXTR_SKIP);
         include plugin_dir_path(__FILE__) . '../../templates/sm-login-form.php';
         return ob_get_clean();
@@ -91,12 +110,10 @@ class SM_Login_Shortcode
         $host = strtolower($host);
         foreach (self::$allowed_hosts as $allowed) {
             if ($host === strtolower($allowed)) {
-                // Return the original URL if host is approved
                 return esc_url_raw($url);
             }
         }
 
-        // Not approved → send to site home
         return home_url('/');
     }
 }

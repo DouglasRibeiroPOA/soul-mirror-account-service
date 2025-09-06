@@ -1,345 +1,309 @@
-/* Base Styles */
-.sm-login-container {
+:root {
+    --primary-green: #2E8B57;
+    --light-green: #4CAF50;
+    --dark-green: #1A5632;
+    --white: #FFFFFF;
+    --light-gray: #F9F9F9;
+    --medium-gray: #E8E8E8;
+    --dark-gray: #333333;
+    --error-color: #e53935;
+    --error-bg: #ffebee;
+    --error-border: #ffcdd2;
+    --success-color: #4CAF50;
+}
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    background: linear-gradient(135deg, #f5f7fa 0%, #e4e8f0 100%);
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     display: flex;
     justify-content: center;
     align-items: center;
     min-height: 100vh;
     padding: 20px;
-    background: linear-gradient(135deg, #f5f7fa 0%, #e4e8f0 100%);
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
 
-.sm-login-card {
-    width: 100%;
-    max-width: 450px;
-    background: #ffffff;
+.sm-login-container {
+    background-color: var(--white);
     border-radius: 16px;
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
-    padding: 35px 30px;
-    margin: 20px 0;
+    width: 100%;
+    max-width: 480px;
+    overflow: hidden;
     transition: transform 0.3s ease;
+    margin: 0 auto;
 }
 
-.sm-login-card:hover {
-    transform: translateY(-5px);
-}
+.sm-login-container:hover { transform: translateY(-5px); }
 
 .sm-login-header {
-    margin-bottom: 28px;
+    background: linear-gradient(135deg, var(--primary-green) 0%, var(--dark-green) 100%);
+    color: var(--white);
+    padding: 30px 25px;
     text-align: center;
-}
-
-.sm-login-header h2 {
-    color: #2E8B57;
-    font-size: 28px;
-    font-weight: 700;
-    margin-bottom: 10px;
-}
-
-.sm-login-header p {
-    color: #4a5568;
-    font-size: 16px;
-}
-
-/* Form Styles */
-.sm-form-group {
-    margin-bottom: 24px;
     position: relative;
+    overflow: hidden;
 }
 
-.sm-form-label {
+.sm-login-header::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: radial-gradient(circle, rgba(255, 255, 255, 0.1) 0%, transparent 60%);
+    transform: rotate(30deg);
+}
+
+.sm-login-header h2 { font-weight: 700; font-size: 28px; margin: 0 0 10px 0; position: relative; }
+.sm-login-header p  { font-size: 16px; opacity: 0.9; position: relative; }
+
+.sm-login-form { padding: 30px 25px; }
+
+/* -------- Form controls -------- */
+.sm-form-group { margin-bottom: 24px; position: relative; }
+
+.sm-form-group label {
     display: block;
     margin-bottom: 10px;
-    color: #333333;
-    font-size: 15px;
     font-weight: 600;
+    color: var(--dark-gray);
+    font-size: 15px;
 }
 
-.sm-form-input {
+.sm-form-group input {
     width: 100%;
     padding: 16px 20px;
-    font-size: 16px;
-    line-height: 1.5;
-    color: #2d3748;
-    background-color: #F9F9F9;
-    border: 2px solid #E8E8E8;
+    border: 2px solid var(--medium-gray);
     border-radius: 12px;
+    font-size: 16px;
     transition: all 0.3s;
+    background-color: var(--light-gray);
 }
 
-.sm-form-input:focus {
-    border-color: #2E8B57;
-    outline: 0;
+.sm-form-group input:focus {
+    border-color: var(--primary-green);
+    outline: none;
     box-shadow: 0 0 0 3px rgba(46, 139, 87, 0.15);
-    background-color: #fff;
+    background-color: var(--white);
 }
 
-.sm-form-input-icon {
+.sm-form-group i {
     position: absolute;
     right: 20px;
-    top: 42px;
-    color: #2E8B57;
+    top: 45px;
+    color: var(--primary-green);
     font-size: 18px;
 }
 
-/* Button Styles */
-.sm-btn {
-    display: inline-block;
-    font-weight: 700;
-    text-align: center;
-    white-space: nowrap;
-    vertical-align: middle;
-    user-select: none;
-    border: 1px solid transparent;
-    padding: 18px;
-    font-size: 18px;
-    line-height: 1.5;
-    border-radius: 12px;
-    transition: all 0.3s;
-    cursor: pointer;
-}
-
-.sm-btn-block {
-    display: block;
-    width: 100%;
-}
-
-.sm-btn-primary {
-    color: #fff;
-    background: linear-gradient(135deg, #2E8B57 0%, #1A5632 100%);
-    border-color: transparent;
-    box-shadow: 0 4px 12px rgba(46, 139, 87, 0.2);
-}
-
-.sm-btn-primary:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 6px 16px rgba(46, 139, 87, 0.3);
-}
-
-/* Alert Styles */
-.sm-alert {
-    padding: 16px;
-    border-radius: 12px;
+/* -------- Field-level error -------- */
+.sm-error-message {
+    color: var(--error-color);
     font-size: 14px;
-    margin-bottom: 20px;
+    margin-top: 8px;
+    display: none;
     font-weight: 500;
 }
 
-.sm-alert-error {
-    color: #d32f2f;
-    background-color: #ffebee;
-    border-left: 4px solid #d32f2f;
+/* -------- Centralized (global) error — JSF-like styling -------- */
+/* Hidden by default */
+/* === Global error box: hidden by default, show only when visible classes are present === */
+.sm-error-server {
+  display: none;                       /* stays hidden on initial load */
+  width: 100%;
+  background-color: var(--error-bg);
+  color: var(--error-color);
+  border: 1px solid var(--error-border);
+  border-radius: 12px;
+  padding: 16px 18px;
+  margin: 0 0 20px 0;
+  font-weight: 600;
+  box-shadow: 0 4px 12px rgba(229, 57, 53, 0.12);
+  text-align: center;
+  line-height: 1.45;
 }
 
-/* Footer Styles */
-.sm-login-footer {
-    margin-top: 28px;
-    padding-top: 20px;
-    border-top: 1px solid #E8E8E8;
-    text-align: center;
+/* Show when an error is actually present */
+.sm-error-server.is-visible,
+.sm-error-server.sm-error-pulse,
+.sm-error-server.sm-shake {
+  display: block;
 }
 
-.sm-footer-links {
+/* Keep colors/centering even if the theme injects tags inside */
+.sm-error-server,
+.sm-error-server * {
+  color: var(--error-color) !important;
+  text-align: center !important;
+}
+
+/* Optional small icon next to text */
+.sm-error-server .sm-error-icon {
+  display: inline-block;
+  margin-right: 8px;
+  font-style: normal;
+  font-size: 18px;
+  line-height: 1;
+  vertical-align: -2px;
+}
+
+
+/* One-time shake animation for attention (trigger via class) */
+@keyframes sm-shake {
+    0%, 100% { transform: translateX(0); }
+    10%, 30%, 50%, 70%, 90% { transform: translateX(-8px); }
+    20%, 40%, 60%, 80% { transform: translateX(8px); }
+}
+.sm-shake { animation: sm-shake 0.5s cubic-bezier(.36,.07,.19,.97) both; }
+
+/* Subtle 1x pulse (optional) */
+@keyframes sm-error-pulse {
+    0% { box-shadow: 0 0 0 0 rgba(229, 57, 53, 0.35); }
+    70% { box-shadow: 0 0 0 10px rgba(229, 57, 53, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(229, 57, 53, 0); }
+}
+.sm-error-pulse { animation: sm-error-pulse 2.2s 1; }
+
+/* Ensure spacing inside form */
+.sm-login-form .sm-error-server { margin-top: 0; margin-bottom: 20px; }
+
+/* -------- Submit button -------- */
+.sm-submit-btn {
+    background: linear-gradient(135deg, var(--primary-green) 0%, var(--dark-green) 100%);
+    color: var(--white);
+    border: none;
+    border-radius: 12px;
+    padding: 18px;
+    font-size: 18px;
+    font-weight: 700;
+    width: 100%;
+    cursor: pointer;
+    transition: all 0.3s;
+    box-shadow: 0 4px 12px rgba(46, 139, 87, 0.2);
     display: flex;
     justify-content: center;
     align-items: center;
-    flex-wrap: wrap;
-    gap: 12px;
+    gap: 10px;
 }
 
-.sm-footer-link {
-    color: #2E8B57;
+.sm-submit-btn:hover { transform: translateY(-2px); box-shadow: 0 6px 16px rgba(46, 139, 87, 0.3); }
+.sm-submit-btn:active { transform: translateY(0); }
+
+/* -------- Stop spinner on click (no background spinning) -------- */
+.sm-loading {
+    display: none !important;
+    animation: none !important;
+    border: none !important;
+    width: 0 !important;
+    height: 0 !important;
+}
+@keyframes spin { to { transform: rotate(360deg); } } /* kept for compatibility */
+
+/* -------- Footer & misc -------- */
+.sm-form-footer {
+    text-align: center;
+    margin-top: 24px;
+    color: var(--dark-gray);
     font-size: 15px;
+}
+.sm-form-footer a {
+    color: var(--primary-green);
     text-decoration: none;
     font-weight: 600;
     transition: all 0.2s;
 }
+.sm-form-footer a:hover { text-decoration: underline; }
 
-.sm-footer-link:hover {
-    text-decoration: underline;
-    color: #1A5632;
+.sm-remember-forgot {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 24px;
+    font-size: 14px;
 }
+.sm-remember-me { display: flex; align-items: center; gap: 8px; }
+.sm-remember-me input[type="checkbox"] { width: 16px; height: 16px; margin: 0; }
+.sm-remember-me label { margin: 0; font-weight: normal; font-size: 14px; color: var(--dark-gray); }
 
-.sm-footer-separator {
-    color: #cbd5e0;
+.sm-forgot-password {
+    color: var(--primary-green);
+    text-decoration: none;
+    font-weight: 600;
+    transition: all 0.2s;
+    font-size: 14px;
 }
+.sm-forgot-password:hover { text-decoration: underline; }
 
-/* Loading spinner */
-.sm-loading {
-    display: inline-block;
-    width: 20px;
-    height: 20px;
-    border: 3px solid rgba(255,255,255,.3);
-    border-radius: 50%;
-    border-top-color: #fff;
-    animation: spin 1s ease-in-out infinite;
-    margin-right: 10px;
-    vertical-align: middle;
-}
-
-@keyframes spin {
-    to { transform: rotate(360deg); }
-}
-
-/* Responsive Adjustments */
+/* -------- Mobile -------- */
 @media (max-width: 480px) {
-    .sm-login-container {
-        padding: 15px;
-        align-items: flex-start;
-        padding-top: 30px;
-    }
-    
-    .sm-login-card {
-        padding: 25px 20px;
-        max-width: 100%;
-        border-radius: 12px;
-    }
-    
-    .sm-login-header h2 {
-        font-size: 24px;
-    }
-    
-    .sm-form-input {
-        padding: 14px 16px;
-    }
-    
-    .sm-form-input-icon {
-        right: 16px;
-        top: 42px;
-    }
-    
-    .sm-btn {
-        padding: 16px;
-        font-size: 16px;
-    }
+    body { padding: 15px; align-items: flex-start; padding-top: 30px; }
+    .sm-login-container { border-radius: 12px; max-width: 100%; margin: 0; }
+    .sm-login-header { padding: 25px 20px; }
+    .sm-login-header h2 { font-size: 24px; }
+    .sm-login-form { padding: 25px 20px; }
+    .sm-form-group input { padding: 14px 16px; }
+    .sm-form-group i { right: 16px; top: 42px; }
+    .sm-submit-btn { padding: 16px; font-size: 16px; }
+    .sm-remember-forgot { flex-direction: column; align-items: flex-start; gap: 12px; }
+    .sm-error-server { padding: 14px 16px; font-size: 14px; }
 }
 
 @media (max-width: 350px) {
-    .sm-login-card {
-        padding: 20px 15px;
-    }
-    
-    .sm-form-input {
-        padding: 12px 14px;
-        font-size: 15px;
-    }
-    
-    .sm-form-input-icon {
-        right: 14px;
-        top: 40px;
-        font-size: 16px;
-    }
-    
-    .sm-footer-links {
-        flex-direction: column;
-        gap: 8px;
-    }
-    
-    .sm-footer-separator {
-        display: none;
-    }
+    .sm-login-header { padding: 20px 15px; }
+    .sm-login-form { padding: 20px 15px; }
+    .sm-form-group { margin-bottom: 20px; }
+    .sm-form-group input { padding: 12px 14px; font-size: 15px; }
+    .sm-form-group i { right: 14px; top: 40px; font-size: 16px; }
+    .sm-error-server { padding: 12px 14px; font-size: 13px; }
 }
 
-/* Animation for error messages */
-@keyframes sm-shake {
-  0%, 100% { transform: translateX(0); }
-  10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
-  20%, 40%, 60%, 80% { transform: translateX(5px); }
+/* FINAL override: make the global error red + centered ONLY when visible */
+#smServerError.sm-error-server {
+  display: block !important;                 /* JS will add text, so show it */
+  color: var(--error-color) !important;
+  background: var(--error-bg) !important;
+  border: 1px solid var(--error-border) !important;
+  text-align: center !important;
+  padding: 16px 18px !important;
+  margin: 0 0 20px 0 !important;
+  border-radius: 12px !important;
+  font-weight: 600 !important;
+  box-shadow: 0 4px 12px rgba(229, 57, 53, 0.12) !important;
 }
 
-.sm-shake {
-  animation: sm-shake 0.5s ease-in-out;
+/* Ensure any child tags (e.g., <p>) inherit the red + centered look */
+#smServerError.sm-error-server * {
+  color: var(--error-color) !important;
+  text-align: center !important;
 }
 
-/* Loading state for button */
-.sm-loading {
-  position: relative;
-  color: transparent !important;
+/* ---- Final guard: error box hidden unless it has content ---- */
+#smServerError.sm-error-server:not(.has-content) {
+  display: none !important;
+  background: none !important;
+  border: 0 !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+  margin: 0 !important;
 }
 
-.sm-loading::after {
-  content: '';
-  position: absolute;
-  left: 50%;
-  top: 50%;
-  width: 20px;
-  height: 20px;
-  margin: -10px 0 0 -10px;
-  border: 2px solid #ffffff;
-  border-radius: 50%;
-  border-right-color: transparent;
-  animation: sm-spin 0.8s linear infinite;
+/* When JS adds .has-content, it shows with your red/center styling */
+#smServerError.sm-error-server.has-content {
+  display: block !important;
+  background-color: var(--error-bg) !important;
+  color: var(--error-color) !important;
+  border: 1px solid var(--error-border) !important;
+  text-align: center !important;
+  padding: 16px 18px !important;
+  margin: 0 0 20px 0 !important;
+  border-radius: 12px !important;
+  font-weight: 600 !important;
+  box-shadow: 0 4px 12px rgba(229, 57, 53, 0.12) !important;
 }
 
-@keyframes sm-spin {
-  to { transform: rotate(360deg); }
-}
-
-/* Make error message more visible */
-.sm-alert-error {
-  background-color: #fee;
-  color: #c33;
-  padding: 12px;
-  border-radius: 4px;
-  margin-bottom: 15px;
-  border-left: 4px solid #c33;
-}
-
-
-/* Add these styles to your existing CSS */
-.sm-alert-error {
-    background-color: #ffebee;
-    color: #c62828;
-    padding: 12px 16px;
-    border-radius: 4px;
-    margin-bottom: 20px;
-    border-left: 4px solid #c62828;
-    display: none;
-}
-
-.sm-shake {
-    animation: sm-shake 0.5s cubic-bezier(.36,.07,.19,.97) both;
-}
-
-@keyframes sm-shake {
-    10%, 90% { transform: translateX(-1px); }
-    20%, 80% { transform: translateX(2px); }
-    30%, 50%, 70% { transform: translateX(-3px); }
-    40%, 60% { transform: translateX(3px); }
-}
-
-.sm-loading {
-    position: relative;
-    color: transparent !important;
-}
-
-.sm-loading::after {
-    content: '';
-    position: absolute;
-    left: 50%;
-    top: 50%;
-    width: 20px;
-    height: 20px;
-    margin: -10px 0 0 -10px;
-    border: 2px solid rgba(255, 255, 255, 0.3);
-    border-radius: 50%;
-    border-top-color: #fff;
-    animation: sm-spin 0.8s linear infinite;
-}
-
-@keyframes sm-spin {
-    to { transform: rotate(360deg); }
-}
-
-/* Focus states for better accessibility */
-.sm-form-input:focus {
-    border-color: #007cba;
-    outline: none;
-    box-shadow: 0 0 0 2px rgba(0, 124, 186, 0.25);
-}
-
-/* Error state for inputs */
-.sm-form-input.error {
-    border-color: #c62828;
-    box-shadow: 0 0 0 2px rgba(198, 40, 40, 0.25);
-}

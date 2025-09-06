@@ -105,17 +105,20 @@ function sm_create_database_tables()
   require_once(ABSPATH . 'wp-admin/includes/upgrade.php');
 
   $ddl = [];
-  // Users table
+  // Users table (profile table linked to WordPress users; no password storage here)
   $ddl[] = "CREATE TABLE {$p}sm_users (
       id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-      email VARCHAR(255) NOT NULL UNIQUE,
+      wp_user_id BIGINT UNSIGNED NOT NULL,
+      email VARCHAR(255) NOT NULL,
       full_name VARCHAR(255) NOT NULL,
       gender VARCHAR(20) DEFAULT NULL,
       date_of_birth DATE DEFAULT NULL,
-      password_hash VARCHAR(255) DEFAULT NULL,
       google_id VARCHAR(255) DEFAULT NULL,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+      UNIQUE KEY uniq_email (email),
+      UNIQUE KEY uniq_wp_user_id (wp_user_id),
+      KEY idx_wp_user_id (wp_user_id)
     ) {$charset_collate};";
 
   // Credits table
