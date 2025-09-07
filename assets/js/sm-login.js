@@ -13,19 +13,52 @@
             attributes: '; path=/; Secure; SameSite=Lax'
         },
         endpoints: {
-            login: window.location.origin + '/wp-json/soulmirror/v1/login'
-        }
+            login: window.location.origin + '/wp-json/soulmirror/v1/login',
+            session: window.location.origin + '/wp-json/soulmirror/v1/session' // check session on Account domain
+        },
+        // Optional: keep this in sync with your PHP whitelist
+        allowedHosts: [
+            'palmreading.vitalguideshop.com',
+            'aura.vitalguideshop.com',
+            'soul-mirror.local',
+            'palm-reading.local'
+        ]
     };
 
-    // Utility functions
-    function $(selector) {
-        return document.querySelector(selector);
+    // Utils
+    function $(sel) { return document.querySelector(sel); }
+    function log() { if (config.debug && window.console) console.log.apply(console, arguments); }
+
+    function getQueryParam(name) {
+        const url = new URL(window.location.href);
+        return url.searchParams.get(name);
     }
 
-    function log() {
-        if (config.debug && window.console) {
-            console.log.apply(console, arguments);
+    function hostFrom(urlStr) {
+        try { return new URL(urlStr, window.location.origin).host.toLowerCase(); }
+        catch { return ''; }
+    }
+
+    function isWhitelisted(urlStr) {
+        const host = hostFrom(urlStr);
+        if (!host) return true; // relative allowed
+        if (host === window.location.host.toLowerCase()) return true; // same-origin
+        if (!Array.isArray(config.allowedHosts)) return false;
+        return config.allowedHosts.map(h => h.toLowerCase()).includes(host);
+    }
+
+    function pickRedirect(hiddenValue) {
+        // Priority: hidden field → ?redirect → ?redirect_uri → document.referrer → "/"
+        const qRedirect = getQueryParam('redirect');
+        const qRedirectUri = getQueryParam('redirect_uri');
+        let candidate = hiddenValue || qRedirect || qRedirectUri || '';
+
+        if (!candidate && document.referrer) {
+            // Use referrer ONLY if same-origin or whitelisted
+            if (isWhitelisted(document.referrer)) candidate = document.referrer;
         }
+
+        return candidate || '/';
     }
 
     // =========================
@@ -34,40 +67,30 @@
     function showError(message) {
         log('Displaying error:', message);
 
-        // Use the styled server-error box if present
         let errorContainer = document.getElementById('smServerError');
 
-        // If the template didn't render it, create one and insert at top of form
         if (!errorContainer) {
             const formWrapper = document.querySelector('.sm-login-form') || $('#sm-login-form')?.parentElement;
-            if (!formWrapper) {
-                // Absolute fallback
-                alert(String(message || 'An error occurred.'));
-                return;
-            }
+            if (!formWrapper) { alert(String(message || 'An error occurred.')); return; }
             errorContainer = document.createElement('div');
             errorContainer.id = 'smServerError';
             errorContainer.className = 'sm-error-server';
             formWrapper.insertBefore(errorContainer, formWrapper.firstChild);
         }
 
-        // Put the message INTO the styled box
         errorContainer.innerHTML =
             '<span class="sm-error-icon">⚠️</span>' + String(message || 'Something went wrong');
 
-        // Mark it as having content so CSS shows it
         errorContainer.classList.add('sm-error-server', 'is-visible', 'has-content');
         errorContainer.style.display = 'block';
 
-        // One-time attention animation
-        errorContainer.classList.remove('sm-shake'); // reset if previously added
-        void errorContainer.offsetWidth;             // reflow to restart animation
+        errorContainer.classList.remove('sm-shake');
+        void errorContainer.offsetWidth;
         errorContainer.classList.add('sm-shake');
         setTimeout(() => errorContainer.classList.remove('sm-shake'), 500);
     }
 
     function hideError() {
-        // Prefer our styled box; fall back to any legacy alert container
         const errorContainer =
             document.getElementById('smServerError') ||
             document.querySelector('.sm-alert-error');
@@ -78,7 +101,6 @@
             errorContainer.textContent = '';
         }
     }
-
 
     // Reset loading states (fix for back button issue)
     function resetLoadingStates() {
@@ -98,24 +120,14 @@
 
     // Form handling
     function validateForm(email, password) {
-        if (!email) {
-            showError('Please enter your email address.');
-            return false;
-        }
-        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-            showError('Please enter a valid email address.');
-            return false;
-        }
-        if (!password) {
-            showError('Please enter your password.');
-            return false;
-        }
+        if (!email) { showError('Please enter your email address.'); return false; }
+        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { showError('Please enter a valid email address.'); return false; }
+        if (!password) { showError('Please enter your password.'); return false; }
         return true;
     }
 
     function setLoadingState(button, isLoading) {
         if (!button) return;
-
         if (isLoading) {
             button.disabled = true;
             button.dataset.originalText = button.textContent;
@@ -131,30 +143,17 @@
     // API communication
     async function loginUser(email, password) {
         log('Attempting login for:', email);
-
         try {
             const response = await fetch(config.endpoints.login, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ email, password })
             });
-
             log('Response status:', response.status);
-
-            const data = await response.json().catch(() => {
-                throw new Error('Invalid server response');
-            });
-
+            const data = await response.json().catch(() => { throw new Error('Invalid server response'); });
             log('Response data:', data);
-
-            if (!response.ok) {
-                throw new Error(data.error || `Login failed (${response.status})`);
-            }
-
-            if (!data.token) {
-                throw new Error('No authentication token received');
-            }
-
+            if (!response.ok) throw new Error(data.error || `Login failed (${response.status})`);
+            if (!data.token) throw new Error('No authentication token received');
             return data;
         } catch (error) {
             log('Login error:', error);
@@ -166,20 +165,17 @@
     function handleLoginSuccess(token, redirectUrl, state) {
         log('Login successful, token received');
 
-        // Set cookie if enabled
         if (config.cookie.set) {
             document.cookie = `${config.cookie.name}=${encodeURIComponent(token)}${config.cookie.attributes}`;
             log('JWT cookie set');
         }
 
-        // Build final redirect URL
-        let finalUrl = redirectUrl || '/';
+        let finalUrl = pickRedirect(redirectUrl);
         finalUrl = appendQueryParam(finalUrl, 'token', token);
         if (state) finalUrl = appendQueryParam(finalUrl, 'state', state);
 
         log('Redirecting to:', finalUrl);
 
-        // Show success message and redirect
         if (window.Swal && typeof window.Swal.fire === 'function') {
             window.Swal.fire({
                 icon: 'success',
@@ -188,86 +184,86 @@
                 confirmButtonText: 'OK',
                 allowOutsideClick: false,
                 allowEscapeKey: false
-            }).then(() => {
-                window.location.href = finalUrl;
-            });
+            }).then(() => { window.location.href = finalUrl; });
         } else {
-            alert('Logged in successfully. Redirecting...');
             window.location.href = finalUrl;
         }
     }
 
     function appendQueryParam(url, key, value) {
         if (!value) return url;
+        try { const urlObj = new URL(url, window.location.origin); urlObj.searchParams.set(key, value); return urlObj.toString(); }
+        catch (e) { const sep = url.includes('?') ? '&' : '?'; return `${url}${sep}${encodeURIComponent(key)}=${encodeURIComponent(value)}`; }
+    }
 
+    // Auto-bounce if already logged into the Account Service
+    async function tryAutoBounce(redirectUrlRaw, state) {
+        const redirectUrl = pickRedirect(redirectUrlRaw);
         try {
-            const urlObj = new URL(url, window.location.origin);
-            urlObj.searchParams.set(key, value);
-            return urlObj.toString();
+            const r = await fetch(config.endpoints.session, { credentials: 'include' });
+            if (!r.ok) return;
+            const data = await r.json();
+            if (!data.logged_in || !data.token) return;
+
+            let finalUrl = appendQueryParam(redirectUrl, 'token', data.token);
+            if (state) finalUrl = appendQueryParam(finalUrl, 'state', state);
+
+            log('Auto-bounce: already logged in, redirecting to', finalUrl);
+            window.location.href = finalUrl;
         } catch (e) {
-            const separator = url.includes('?') ? '&' : '?';
-            return `${url}${separator}${encodeURIComponent(key)}=${encodeURIComponent(value)}`;
+            log('Auto-bounce check failed (ignored):', e);
         }
     }
 
-    // Main initialization
-    function initializeLoginForm() {
+    // Main initialization (now async so we can await tryAutoBounce)
+    async function initializeLoginForm() {
         const form = $('#sm-login-form');
-        if (!form) {
-            log('Login form not found');
-            return;
-        }
+        if (!form) { log('Login form not found'); return; }
 
-        const emailInput = $('#sm_email');
-        const passwordInput = $('#sm_password');
         const redirectInput = form.querySelector('input[name="sm_redirect"]');
-        const stateInput = form.querySelector('input[name="sm_state"]');
-        const submitButton = form.querySelector('button[type="submit"]');
+        const stateInput    = form.querySelector('input[name="sm_state"]');
+        const redirectUrl   = redirectInput ? redirectInput.value : '';
+        const state         = stateInput ? stateInput.value : '';
 
-        if (!emailInput || !passwordInput) {
-            log('Required form fields not found');
-            return;
-        }
+        // Await auto-bounce before wiring up the form
+        await tryAutoBounce(redirectUrl, state);
 
-        // Reset any existing loading states (fix for back button)
+        const emailInput    = $('#sm_email');
+        const passwordInput = $('#sm_password');
+        const submitButton  = form.querySelector('button[type="submit"]');
+
+        if (!emailInput || !passwordInput) { log('Required form fields not found'); return; }
+
         resetLoadingStates();
 
         // Remove any existing event listeners to prevent duplicates
         const newForm = form.cloneNode(true);
         form.parentNode.replaceChild(newForm, form);
 
-        // Get references to the new form elements
-        const newEmailInput = $('#sm_email');
+        // Re-select references on the cloned form
+        const newEmailInput  = $('#sm_email');
         const newPasswordInput = $('#sm_password');
         const newRedirectInput = newForm.querySelector('input[name="sm_redirect"]');
-        const newStateInput = newForm.querySelector('input[name="sm_state"]');
-        const newSubmitButton = newForm.querySelector('button[type="submit"]');
+        const newStateInput    = newForm.querySelector('input[name="sm_state"]');
+        const newSubmitButton  = newForm.querySelector('button[type="submit"]');
 
-        // Add the submit handler to the new form
         newForm.addEventListener('submit', async (e) => {
             e.preventDefault();
-            log('Form submission intercepted - preventing default');
             hideError();
 
             const email = newEmailInput.value.trim();
             const password = newPasswordInput.value;
-            const redirectUrl = newRedirectInput ? newRedirectInput.value : '';
-            const state = newStateInput ? newStateInput.value : '';
+            const redirectUrl2 = newRedirectInput ? newRedirectInput.value : '';
+            const state2 = newStateInput ? newStateInput.value : '';
 
-            // Validate form
             if (!validateForm(email, password)) return;
 
-            // Set loading state
             setLoadingState(newSubmitButton, true);
 
             try {
-                // Attempt login
                 const result = await loginUser(email, password);
-
-                // Handle success
-                handleLoginSuccess(result.token, redirectUrl, state);
+                handleLoginSuccess(result.token, redirectUrl2, state2);
             } catch (error) {
-                // Handle error
                 showError(error.message || 'Login failed. Please try again.');
                 setLoadingState(newSubmitButton, false);
             }
@@ -279,7 +275,7 @@
 
     // Initialize when DOM is ready
     if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', initializeLoginForm);
+        document.addEventListener('DOMContentLoaded', () => { initializeLoginForm(); });
     } else {
         initializeLoginForm();
     }

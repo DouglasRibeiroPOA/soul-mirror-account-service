@@ -6,6 +6,14 @@ class SM_API_Router
 
     public function register_routes()
     {
+
+        // Quick register (can live in your existing rest_api_init closure)
+        register_rest_route(SM_API_NAMESPACE, '/session', [
+            'methods'  => 'GET',
+            'callback' => ['SM_Account', 'handle_session'],
+            'permission_callback' => '__return_true', // reads WP cookie only
+        ]);
+
         // ——— User Registration ———
         register_rest_route(SM_API_NAMESPACE, '/register', [
             'methods'             => 'POST',

@@ -29,10 +29,6 @@ $lost_pw_url = wp_lostpassword_url();
 // Get registration URL
 $register_url = wp_registration_url();
 
-// Get the correct path to the JavaScript file
-$plugin_url = plugin_dir_url(__FILE__);
-$js_url = $plugin_url . '../assets/js/sm-login.js';
-
 // Pre-fill email after redirect
 $email_value = '';
 if (!empty($_GET['email'])) {
@@ -86,7 +82,7 @@ if (!empty($_GET['login_error'])) {
             </div>
 
             <!-- Hidden fields for redirect & state -->
-            <input type="hidden" name="sm_redirect" value="<?php echo esc_attr($redirect); ?>">
+            <input type="hidden" name="sm_redirect" value="<?php echo esc_attr($approved_redirect); ?>">
             <?php if (!empty($state)) : ?>
                 <input type="hidden" name="sm_state" value="<?php echo esc_attr($state); ?>">
             <?php endif; ?>
@@ -106,51 +102,3 @@ if (!empty($_GET['login_error'])) {
         </div>
     </div>
 </div>
-
-<!-- Load external JavaScript (kept intact) -->
-<script>
-    // Load sm-login.js once
-    if (typeof window.smLoginInitialized === 'undefined') {
-        var script = document.createElement('script');
-        script.src = '<?php echo esc_url($js_url); ?>?v=1.0.5';
-        script.onload = function() {
-            // If there is a server error already rendered, add a single shake
-            setTimeout(function() {
-                var errorElement = document.querySelector('.sm-error-server');
-                if (errorElement && errorElement.textContent.trim() !== '') {
-                    errorElement.classList.add('sm-shake');
-                    setTimeout(function() {
-                        errorElement.classList.remove('sm-shake');
-                        // keep a subtle 1x pulse already handled via CSS class
-                    }, 500);
-                }
-            }, 100);
-        };
-        script.onerror = function() {
-            // Fallback if JS fails to load
-            var form = document.getElementById('sm-login-form');
-            if (form) {
-                form.addEventListener('submit', function(e) {
-                    e.preventDefault();
-                    alert('JavaScript failed to load. Please refresh the page and try again.');
-                });
-            }
-        };
-        document.head.appendChild(script);
-    }
-</script>
-
-<!-- Small helper to ensure no spinner sticks on bfcache returns -->
-<script>
-    document.addEventListener('DOMContentLoaded', function() {
-        const form = document.getElementById('sm-login-form');
-        if (!form) return;
-
-        // Ensure no spinner nor disabled state on bfcache/back
-        const btn = document.getElementById('smSubmitBtn');
-        if (btn) {
-            btn.disabled = false;
-            btn.classList.remove('sm-loading');
-        }
-    });
-</script>

@@ -34,6 +34,16 @@ add_action('rest_api_init', function () {
   $router->register_routes();
 });
 
+// File: inside your plugin (e.g., holistic-ai-experiences.php or similar)
+
+add_action('after_setup_theme', function () {
+    // Hide the admin bar for everyone except administrators
+    if (!current_user_can('administrator') && !is_admin()) {
+        show_admin_bar(false);
+    }
+});
+
+
 // — Initialize shortcodes (render & form handling) —
 add_action('init', ['SM_Login_Shortcode',    'init']);
 add_action('init', ['SM_Register_Shortcode', 'init']);

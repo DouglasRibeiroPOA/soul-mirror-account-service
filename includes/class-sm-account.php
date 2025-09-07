@@ -44,6 +44,38 @@ class SM_Account
      * POST /wp-json/soulmirror/v1/register
      * Body JSON: { email, password, full_name, date_of_birth? (YYYY-MM-DD) }
      */
+
+    // In includes/class-sm-account.php
+    public static function handle_session(WP_REST_Request $req)
+    {
+        if (!is_user_logged_in()) {
+            return rest_ensure_response(['logged_in' => false]);
+        }
+
+        $user = wp_get_current_user();
+        $wp_user_id = (int) $user->ID;
+
+        global $wpdb;
+        $t = self::t_users(); // your sm_users table
+        $sm = $wpdb->get_row($wpdb->prepare("SELECT * FROM {$t} WHERE wp_user_id=%d", $wp_user_id));
+
+        // Short TTL token for cross-domain handoff (e.g., 3–5 minutes)
+        $jwt = self::issue_jwt_for_user(
+            $wp_user_id,
+            $user->user_email,
+            300, // 5 minutes
+            ['sm_user_id' => (int)($sm->id ?? 0)]
+        );
+
+        return rest_ensure_response([
+            'logged_in'  => true,
+            'token'      => $jwt,
+            'wp_user_id' => $wp_user_id,
+            'sm_user_id' => (int)($sm->id ?? 0),
+        ]);
+    }
+
+
     public static function handle_register(WP_REST_Request $req)
     {
         // ---- Parse & sanitize body

@@ -26,7 +26,7 @@ class SM_Login_Shortcode
     public static function enqueue_assets()
     {
         global $post;
-        
+
         // Check if we're on a page with the shortcode
         if (!is_a($post, 'WP_Post') || !has_shortcode($post->post_content, 'sm_login_form')) {
             return;
@@ -37,9 +37,9 @@ class SM_Login_Shortcode
 
         // Login CSS
         wp_enqueue_style(
-            'sm-login-css', 
-            $plugin_url . 'css/sm-login.css', 
-            [], 
+            'sm-login-css',
+            $plugin_url . 'css/sm-login.css',
+            [],
             '1.0.1'
         );
 
@@ -57,7 +57,9 @@ class SM_Login_Shortcode
             'ajax_url' => admin_url('admin-ajax.php'),
             'rest_url' => rest_url('soulmirror/v1/login'),
             'home_url' => home_url('/'),
-            'nonce'    => wp_create_nonce('sm_login_nonce')
+            'nonce'    => wp_create_nonce('sm_login_nonce'),
+            'redirect'  => isset($template_vars['approved_redirect']) ? $template_vars['approved_redirect'] : '',
+            'state'     => isset($template_vars['state']) ? $template_vars['state'] : '',
         ]);
     }
 
@@ -67,14 +69,17 @@ class SM_Login_Shortcode
     public static function render_shortcode($atts)
     {
         // Prefer ?redirect, otherwise ?redirect_uri; fallback to home
+        // Prefer ?redirect, otherwise ?redirect_uri; fallback to home
         $raw_redirect = isset($_GET['redirect'])
-            ? esc_url_raw($_GET['redirect'])
-            : (isset($_GET['redirect_uri']) ? esc_url_raw($_GET['redirect_uri']) : home_url('/'));
+            ? $_GET['redirect']
+            : (isset($_GET['redirect_uri']) ? $_GET['redirect_uri'] : '');
 
+        // Whitelist enforcement (handles decoding internally)
+        $approved_redirect = self::sanitize_redirect_host($raw_redirect);
+
+        // State parameter (leave as-is)
         $state = isset($_GET['state']) ? sanitize_text_field($_GET['state']) : '';
 
-        // Whitelist enforcement
-        $approved_redirect = self::sanitize_redirect_host($raw_redirect);
 
         // Expose vars to the template scope
         $template_vars = [
@@ -93,27 +98,46 @@ class SM_Login_Shortcode
     /**
      * Returns a safe redirect URL if host is whitelisted; otherwise site home.
      */
+    /**
+     * Returns a safe redirect URL if host is whitelisted; otherwise site home.
+     * Accepts encoded or plain URLs and supports relative paths (same-origin).
+     */
+    /**
+     * Returns a safe redirect URL if host is whitelisted; otherwise site home.
+     * Accepts encoded or plain URLs, supports relative paths, and avoids regex.
+     */
     private static function sanitize_redirect_host(string $url): string
     {
-        if (empty($url)) {
+        // Normalize/Decode once
+        $decoded = rawurldecode(trim((string)$url));
+
+        // Empty → home
+        if ($decoded === '') {
             return home_url('/');
         }
 
-        $parts = @parse_url($url);
-        $host  = $parts['host'] ?? '';
-        if (!$host) {
-            // Relative URLs are allowed; anchor to site origin
-            return home_url($url);
+        // Allow relative paths like "/some/page" but not protocol-relative "//host"
+        if ($decoded[0] === '/' && (!isset($decoded[1]) || $decoded[1] !== '/')) {
+            return esc_url_raw(home_url($decoded));
         }
 
-        // Compare lowercase hostnames
-        $host = strtolower($host);
+        // Parse absolute URL
+        $parts = wp_parse_url($decoded);
+        if (!$parts || empty($parts['host'])) {
+            return home_url('/');
+        }
+
+        $host = strtolower($parts['host']);
+
+        // Whitelist check (exact host match)
         foreach (self::$allowed_hosts as $allowed) {
             if ($host === strtolower($allowed)) {
-                return esc_url_raw($url);
+                // Return sanitized decoded URL (preserves scheme/path/query/fragment)
+                return esc_url_raw($decoded);
             }
         }
 
+        // Fallback: home
         return home_url('/');
     }
 }
