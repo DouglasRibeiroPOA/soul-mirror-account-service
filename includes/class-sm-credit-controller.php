@@ -148,11 +148,13 @@ class SM_Credit_Controller
             $module = sanitize_key($module);
             $added = (int) $wpdb->get_var($wpdb->prepare(
                 "SELECT COALESCE(SUM(credits_added),0) FROM {$p}sm_credits WHERE user_id = %d AND module = %s",
-                (int) $user_id, $module
+                (int) $user_id,
+                $module
             ));
             $used = (int) $wpdb->get_var($wpdb->prepare(
                 "SELECT COALESCE(SUM(credits_used),0) FROM {$p}sm_credits WHERE user_id = %d AND module = %s",
-                (int) $user_id, $module
+                (int) $user_id,
+                $module
             ));
             return max(0, $added - $used);
         }
@@ -174,30 +176,6 @@ class SM_Credit_Controller
         return $out;
     }
 
-    /**
-     * REST: GET /credits/balance
-     * Query param (optional): module
-     */
-    public static function rest_get_balance(WP_REST_Request $req)
-    {
-        $user = SM_Account::get_sm_user_from_jwt($req);
-        if (!$user) {
-            return new WP_Error('invalid_token', 'Invalid token', ['status' => 401]);
-        }
-
-        $module = $req->get_param('module');
-        if (is_string($module) && $module !== '') {
-            $balance = self::get_balance((int) $user->id, $module);
-            return rest_ensure_response([
-                'module'  => sanitize_key($module),
-                'balance' => (int) $balance,
-            ]);
-        }
-
-        return rest_ensure_response([
-            'balances' => self::get_balance((int) $user->id, null),
-        ]);
-    }
 
     /**
      * REST: POST /credits/use
@@ -206,10 +184,32 @@ class SM_Credit_Controller
      * Deducts from specific module first; if insufficient, falls back to 'global' bucket.
      * All wrapped in a DB transaction with row-level locking to prevent races.
      */
+    private static function log($rid, $message, array $ctx = [])
+    {
+        // Keep the context small to avoid logging PII; user_id and module are fine.
+        if (!empty($ctx)) {
+            $message .= ' ' . wp_json_encode($ctx);
+        }
+        error_log('[SM_Credits][' . $rid . '] ' . $message);
+    }
+
+    /**
+     * POST /wp-json/{NS}/credits/use
+     * Requires Authorization: Bearer <JWT> via permission_callback.
+     */
     public static function rest_use_credit(WP_REST_Request $req)
     {
-        $user = SM_Account::get_sm_user_from_jwt($req);
-        if (!$user) {
+        $rid = substr(bin2hex(random_bytes(6)), 0, 8); // short request id for log correlation
+
+        // 1) Authenticate via your existing account helper
+        try {
+            $user = SM_Account::get_sm_user_from_jwt($req);
+        } catch (\Throwable $e) {
+            self::log($rid, 'get_sm_user_from_jwt threw', ['err' => $e->getMessage()]);
+            return new WP_Error('invalid_token', 'Invalid token', ['status' => 401]);
+        }
+        if (!$user || empty($user->id)) {
+            self::log($rid, 'invalid/expired token');
             return new WP_Error('invalid_token', 'Invalid token', ['status' => 401]);
         }
 
@@ -217,44 +217,68 @@ class SM_Credit_Controller
         $p   = $wpdb->prefix;
         $tbl = "{$p}sm_credits";
 
+        // 2) Validate inputs
         $module    = sanitize_key($req->get_param('module'));
         $amount    = max(1, (int) ($req->get_param('amount') ?? 1));
         $reference = sanitize_text_field($req->get_param('reference') ?? '');
 
         if ($module === '') {
+            self::log($rid, 'bad_request: missing module', ['user_id' => (int)$user->id]);
             return new WP_Error('bad_request', 'Module is required', ['status' => 400]);
         }
 
+        // 3) Start atomic section + advisory lock
+        $lock_name = 'sm_credits_user_' . (int) $user->id;
+        $lock_acquired = false;
+
         try {
-            // Start atomic section
             $wpdb->query('START TRANSACTION');
+            self::log($rid, 'transaction started', ['user_id' => (int)$user->id, 'module' => $module, 'amount' => $amount]);
 
-            // Advisory lock (prevents race even when user has no rows yet)
-            // If unavailable in your MySQL, you can omit this safely.
-            $lock_name = $wpdb->prepare('sm_credits_user_%d', (int) $user->id);
-            $wpdb->get_var($wpdb->prepare('SELECT GET_LOCK(%s, %d)', $lock_name, 5));
+            $lock = $wpdb->get_var($wpdb->prepare('SELECT GET_LOCK(%s, %d)', $lock_name, 5));
+            $lock_acquired = ($lock === '1' || $lock === 1);
+            if (!$lock_acquired) {
+                self::log($rid, 'GET_LOCK timeout', ['lock_name' => $lock_name]);
+                $wpdb->query('ROLLBACK');
+                return new WP_Error('lock_timeout', 'Please retry', ['status' => 503]);
+            }
 
-            // Current specific balance
+            // 4) Read balances
             $specific = (int) $wpdb->get_var($wpdb->prepare(
                 "SELECT COALESCE(SUM(credits_added)-SUM(credits_used),0)
                  FROM {$tbl}
                  WHERE user_id = %d AND module = %s",
-                (int) $user->id, $module
+                (int) $user->id,
+                $module
             ));
-
-            // Current global balance
             $global = (int) $wpdb->get_var($wpdb->prepare(
                 "SELECT COALESCE(SUM(credits_added)-SUM(credits_used),0)
                  FROM {$tbl}
                  WHERE user_id = %d AND module = %s",
-                (int) $user->id, 'global'
+                (int) $user->id,
+                'global'
             ));
-
             $available = $specific + $global;
+
+            self::log($rid, 'balances read', [
+                'user_id'   => (int)$user->id,
+                'module'    => $module,
+                'specific'  => $specific,
+                'global'    => $global,
+                'available' => $available,
+                'amount'    => $amount,
+            ]);
+
             if ($available < $amount) {
-                // Release advisory lock
+                // Not enough credits: 402
                 $wpdb->get_var($wpdb->prepare('SELECT RELEASE_LOCK(%s)', $lock_name));
+                $lock_acquired = false;
                 $wpdb->query('ROLLBACK');
+                self::log($rid, 'insufficient_credits', [
+                    'user_id'   => (int)$user->id,
+                    'available' => $available,
+                    'needed'    => $amount
+                ]);
                 return new WP_Error(
                     'insufficient_credits',
                     'Not enough credits',
@@ -262,46 +286,153 @@ class SM_Credit_Controller
                 );
             }
 
-            // Choose bucket: prefer specific, otherwise take from global
+            // 5) Choose bucket & insert usage row
             $bucket = ($specific >= $amount) ? $module : 'global';
 
             $ok = $wpdb->insert($tbl, [
                 'user_id'       => (int) $user->id,
-                'email'         => $user->email,
+                'email'         => $user->email ?? '',
                 'module'        => $bucket,
                 'credits_added' => 0,
                 'credits_used'  => $amount,
                 'source'        => 'api_use',
                 'created_at'    => current_time('mysql'),
+            ], [
+                '%d',
+                '%s',
+                '%s',
+                '%d',
+                '%d',
+                '%s',
+                '%s'
             ]);
 
             if ($ok === false) {
-                // Release advisory lock
+                $dberr = $wpdb->last_error;
                 $wpdb->get_var($wpdb->prepare('SELECT RELEASE_LOCK(%s)', $lock_name));
+                $lock_acquired = false;
                 $wpdb->query('ROLLBACK');
+                self::log($rid, 'db_insert_failed', ['error' => $dberr]);
                 return new WP_Error('db_error', 'Failed to deduct credits', ['status' => 500]);
             }
 
-            // Log usage
-            self::record_usage_log((int) $user->id, $module, 'usage', $amount, $reference);
+            // 6) Optional usage log
+            if (method_exists(__CLASS__, 'record_usage_log')) {
+                try {
+                    self::record_usage_log((int) $user->id, $module, 'usage', $amount, $reference);
+                } catch (\Throwable $e) {
+                    self::log($rid, 'record_usage_log failed', ['err' => $e->getMessage()]);
+                }
+            }
 
-            // Release advisory lock, commit
+            // 7) Commit & release lock
             $wpdb->get_var($wpdb->prepare('SELECT RELEASE_LOCK(%s)', $lock_name));
+            $lock_acquired = false;
             $wpdb->query('COMMIT');
+
+            $remaining = (int) ($available - $amount);
+            self::log($rid, 'credit_deducted', [
+                'user_id'           => (int)$user->id,
+                'module_requested'  => $module,
+                'module_used'       => $bucket,
+                'amount'            => $amount,
+                'credits_remaining' => $remaining,
+                'reference'         => $reference
+            ]);
 
             return rest_ensure_response([
                 'success'           => true,
                 'module_requested'  => $module,
                 'module_used'       => $bucket,
                 'amount'            => $amount,
-                'credits_remaining' => (int) ($available - $amount),
+                'credits_remaining' => $remaining,
             ]);
         } catch (\Throwable $e) {
-            // Best-effort cleanup
+            // Safety cleanup
+            if ($lock_acquired) {
+                $wpdb->get_var($wpdb->prepare('SELECT RELEASE_LOCK(%s)', $lock_name));
+            }
             $wpdb->query('ROLLBACK');
-            return new WP_Error('server_error', 'Unexpected error: '.$e->getMessage(), ['status' => 500]);
+            self::log($rid, 'server_error', ['err' => $e->getMessage()]);
+            return new WP_Error('server_error', 'Unexpected error', ['status' => 500]);
         }
     }
+
+    /**
+     * GET /wp-json/{NS}/credits/balance
+     * (Optional) Useful for debugging. Requires Authorization via permission_callback.
+     */
+    public static function rest_get_balance(WP_REST_Request $req)
+    {
+        $rid = substr(bin2hex(random_bytes(6)), 0, 8);
+
+        try {
+            $user = SM_Account::get_sm_user_from_jwt($req);
+        } catch (\Throwable $e) {
+            self::log($rid, 'get_sm_user_from_jwt threw', ['err' => $e->getMessage()]);
+            return new WP_Error('invalid_token', 'Invalid token', ['status' => 401]);
+        }
+        if (!$user || empty($user->id)) {
+            self::log($rid, 'invalid/expired token');
+            return new WP_Error('invalid_token', 'Invalid token', ['status' => 401]);
+        }
+
+        global $wpdb;
+        $p   = $wpdb->prefix;
+        $tbl = "{$p}sm_credits";
+
+        $module = sanitize_key($req->get_param('module')); // optional filter
+
+        if ($module) {
+            $specific = (int) $wpdb->get_var($wpdb->prepare(
+                "SELECT COALESCE(SUM(credits_added)-SUM(credits_used),0)
+                 FROM {$tbl} WHERE user_id = %d AND module = %s",
+                (int)$user->id,
+                $module
+            ));
+            $global = (int) $wpdb->get_var($wpdb->prepare(
+                "SELECT COALESCE(SUM(credits_added)-SUM(credits_used),0)
+                 FROM {$tbl} WHERE user_id = %d AND module = %s",
+                (int)$user->id,
+                'global'
+            ));
+            $resp = [
+                'success'   => true,
+                'user_id'   => (int)$user->id,
+                'module'    => $module,
+                'specific'  => $specific,
+                'global'    => $global,
+                'available' => $specific + $global,
+            ];
+            self::log($rid, 'balance', $resp);
+            return rest_ensure_response($resp);
+        } else {
+            // All modules grouped
+            $rows = $wpdb->get_results($wpdb->prepare(
+                "SELECT module,
+                        COALESCE(SUM(credits_added)-SUM(credits_used),0) AS balance
+                 FROM {$tbl} WHERE user_id = %d GROUP BY module",
+                (int)$user->id
+            ), ARRAY_A);
+
+            $by_module = [];
+            $available = 0;
+            foreach ($rows as $r) {
+                $m = $r['module'];
+                $b = (int)$r['balance'];
+                $by_module[$m] = $b;
+                $available += ($m === 'global') ? 0 : $b; // convenience, but total by module is available + global
+            }
+            $resp = [
+                'success'   => true,
+                'user_id'   => (int)$user->id,
+                'balances'  => $by_module,
+            ];
+            self::log($rid, 'balance_all', $resp);
+            return rest_ensure_response($resp);
+        }
+    }
+
 
     /**
      * Insert a record into sm_credit_usage_log.
