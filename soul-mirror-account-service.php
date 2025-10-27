@@ -1,9 +1,10 @@
 <?php
+
 /**
  * Plugin Name: SoulMirror Account Service
  * Description: Centralized user and credit manager for SoulMirror platform.
- * Version: 1.0
- * Author: Simone Moreira
+ * Version: 2.0
+ * Author: Douglas Ribeiro
  */
 
 if (! defined('ABSPATH')) exit;
@@ -37,10 +38,10 @@ add_action('rest_api_init', function () {
 // File: inside your plugin (e.g., holistic-ai-experiences.php or similar)
 
 add_action('after_setup_theme', function () {
-    // Hide the admin bar for everyone except administrators
-    if (!current_user_can('administrator') && !is_admin()) {
-        show_admin_bar(false);
-    }
+  // Hide the admin bar for everyone except administrators
+  if (!current_user_can('administrator') && !is_admin()) {
+    show_admin_bar(false);
+  }
 });
 
 
@@ -115,46 +116,49 @@ function sm_create_database_tables()
   require_once(ABSPATH . 'wp-admin/includes/upgrade.php');
 
   $ddl = [];
-  // Users table (profile table linked to WordPress users; no password storage here)
+  // sm_users
   $ddl[] = "CREATE TABLE {$p}sm_users (
-      id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-      wp_user_id BIGINT UNSIGNED NOT NULL,
-      email VARCHAR(255) NOT NULL,
-      full_name VARCHAR(255) NOT NULL,
-      gender VARCHAR(20) DEFAULT NULL,
-      date_of_birth DATE DEFAULT NULL,
-      google_id VARCHAR(255) DEFAULT NULL,
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-      UNIQUE KEY uniq_email (email),
-      UNIQUE KEY uniq_wp_user_id (wp_user_id),
-      KEY idx_wp_user_id (wp_user_id)
-    ) {$charset_collate};";
+  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  wp_user_id BIGINT UNSIGNED NOT NULL,
+  account_id CHAR(36) NOT NULL,
+  email VARCHAR(255) NOT NULL,
+  full_name VARCHAR(255) NOT NULL,
+  gender VARCHAR(20) DEFAULT NULL,
+  date_of_birth DATE DEFAULT NULL,
+  google_id VARCHAR(255) DEFAULT NULL,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  UNIQUE KEY uniq_account_id (account_id),
+  UNIQUE KEY uniq_email (email),
+  UNIQUE KEY uniq_wp_user_id (wp_user_id),
+  KEY idx_wp_user_id (wp_user_id)
+) {$charset_collate};";
 
-  // Credits table
+  // sm_credits
   $ddl[] = "CREATE TABLE {$p}sm_credits (
-      id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-      user_id BIGINT UNSIGNED NOT NULL,
-      email VARCHAR(255) NOT NULL,
-      module VARCHAR(100) NOT NULL,
-      credits_added INT DEFAULT 0,
-      credits_used INT DEFAULT 0,
-      source VARCHAR(255) DEFAULT NULL,
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-      INDEX (user_id)
-    ) {$charset_collate};";
+  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  account_id CHAR(36) NOT NULL,
+  email VARCHAR(255) NOT NULL,
+  module VARCHAR(100) NOT NULL,
+  credits_added INT DEFAULT 0,
+  credits_used INT DEFAULT 0,
+  source VARCHAR(255) DEFAULT NULL,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  KEY idx_account_id (account_id)
+) {$charset_collate};";
 
-  // Usage log
+  // sm_credit_usage_log
   $ddl[] = "CREATE TABLE {$p}sm_credit_usage_log (
-      id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-      user_id BIGINT UNSIGNED NOT NULL,
-      module VARCHAR(100) NOT NULL,
-      credit_type VARCHAR(100) NOT NULL,
-      credits_used INT NOT NULL DEFAULT 1,
-      reference VARCHAR(255) DEFAULT NULL,
-      used_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-      INDEX (user_id)
-    ) {$charset_collate};";
+  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  account_id CHAR(36) NOT NULL,
+  module VARCHAR(100) NOT NULL,
+  credit_type VARCHAR(100) NOT NULL,
+  credits_used INT NOT NULL DEFAULT 1,
+  reference VARCHAR(255) DEFAULT NULL,
+  used_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  KEY idx_account_id (account_id)
+) {$charset_collate};";
+
 
   foreach ($ddl as $sql) {
     dbDelta($sql);
